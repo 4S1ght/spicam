@@ -1,0 +1,15 @@
+motionDetect:           ### Motion detection ###
+  probing: 2            # Frequency of how often a second to probe the camera for motion.
+  threshold: 0.07       # Minimum hamming distance of probed frames that triggers a motion event.
+
+battery:                ### Battery monitoring ###
+  shutdownThreshold: 30 # The percentage of battery which when reached will trigger a safe shutdown of the camera.
+
+logging:                ### Logging ###
+  folder: ./etc/logs    # Directory to store the log files.
+  level: debug          # Log level.
+  maxLogFiles: 5        # Maximum number of log files to keep.
+  maxLogSize: 20MB      # Maximum log file size in bytes.
+
+web:                    ### Web server ###
+  port: 8000            # Port to run the web server on.
