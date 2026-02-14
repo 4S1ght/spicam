@@ -1,8 +1,12 @@
+// Imports =============================================================================================================
+
 import yaml from 'yaml'
 import path from 'node:path'
 import url from 'node:url'
 import fs from 'node:fs/promises'
 import z from 'zod'
+
+// Service =============================================================================================================
 
 const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
@@ -28,6 +32,8 @@ export default class ConfigService {
             console.error(result.error)
             process.exit(1)
         }
+
+        this.settings.logging.folder = path.join(dirname, '../../', this.settings.logging.folder)
 
     }
 

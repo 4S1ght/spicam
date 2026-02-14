@@ -6,7 +6,7 @@ import c        from 'chalk'
 import winston  from 'winston'
 
 import 'winston-daily-rotate-file'
-import type ConfigService from '../config/ConfigService.ts'
+import type ConfigService from '../config/Config.service.ts'
 
 // Types ===============================================================================================================
 
@@ -29,11 +29,13 @@ export interface LoggerInit {
     stackDepth: number
 }
 
+export type LoggingScope = ReturnType<InstanceType<typeof LoggingService>['getScope']>
+
 // Variables ===========================================================================================================
 
 const dirname = path.join(path.dirname(url.fileURLToPath(import.meta.url)), '../../')
 
-// Module ==============================================================================================================
+// Service =============================================================================================================
 
 export default class LoggingService {
 
@@ -83,8 +85,8 @@ export default class LoggingService {
                 ]
             })
 
-            const scope = url.fileURLToPath(import.meta.url)
-            this.winston.info(`Logging service initialized.`)
+            const scope = this.getScope(import.meta.url)
+            scope.info(`Started service.`)
 
         } 
         catch (error) {
