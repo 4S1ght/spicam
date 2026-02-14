@@ -3,6 +3,9 @@
 !node/
 !node/**
 
+!python/
+!python/**
+
 !.gitignore
 !LICENSE
 !package.json
@@ -10,3 +13,4 @@
 !README.md
 !tsconfig.json
 !config.yaml
+!setup.sh
