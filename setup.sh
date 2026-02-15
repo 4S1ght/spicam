@@ -7,7 +7,7 @@ set -e
 ETC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/etc"
 
 G="\033[0;32m"
-E="\033[0;31m"
+R="\033[0;31m"
 Y="\033[1;33m"
 NC="\033[0m" # No Color
 
@@ -25,7 +25,7 @@ fi
 
 echo -e "${Y}Installing core dependencies...${NC}"
 sudo apt-get update
-sudo apt-get install python3 pythin3-smbus curl -y
+sudo apt-get install python3 python3-smbus curl -y
 
 # Runtime ==============================================================================================================
 

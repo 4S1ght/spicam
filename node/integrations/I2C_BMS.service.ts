@@ -10,6 +10,8 @@ import ProcessUtils             from '../utils/Process.ts'
 
 import type LoggingService      from '../logging/Logging.service.ts'
 import type { LoggingScope }    from '../logging/Logging.service.ts'
+import type ConfigService       from '../config/Config.service.ts'
+
 
 const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
@@ -34,7 +36,7 @@ export default interface I2CBMSService extends EventEmitter {
 export default class I2CBMSService extends EventEmitter {
 
     public static name = 'bms'
-    public static deps = ['logging']
+    public static deps = ['logging', 'config']
 
     private integrationScript = path.join(dirname, '../../python/INA219.py')
     private cp: cp.ChildProcess | null = null
@@ -42,15 +44,17 @@ export default class I2CBMSService extends EventEmitter {
 
     private logging: LoggingService
     private ls: LoggingScope
+    private config: ConfigService
 
     private lastRestart = 0
     private restartCount = 0
 
-    public constructor(deps: { logging: LoggingService }) {
+    public constructor(deps: { logging: LoggingService, config: ConfigService }) {
 
         super()
         this.logging = deps.logging
         this.ls = this.logging.getScope(import.meta.url)
+        this.config = deps.config
 
         process.on('SIGTERM', () => this.stop())
         process.on('SIGINT',  () => this.stop())
@@ -79,8 +83,13 @@ export default class I2CBMSService extends EventEmitter {
         this.ls.info('Service stopped.')
     }
 
-
     private async start() {
+
+        if (!this.config.settings.bms.enabled) {
+            this.ls.info('BMS integration is disabled. The service will stay idle.')
+            return
+        }
+
         if (!this.cp || typeof this.cp.exitCode === 'number') {
 
             this.ls.info('Starting BMS script...')
@@ -110,20 +119,24 @@ export default class I2CBMSService extends EventEmitter {
             this.cp = child
 
         }
+
     }
 
-    private stop() {
+    private async stop() {
 
         this.stopped = true
         this.ls.info('Stopping BMS script...')
 
-        return new Promise<Error | undefined>((resolve) => {
+        await new Promise<Error | undefined>((resolve) => {
             if (this.cp &&  this.cp.exitCode === null) {
                 this.cp.on('close', resolve)
                 this.cp.on('error', resolve)
                 this.cp.kill()
             }
         })
+
+        this.cp = null
+        this.ls.info('BMS script stopped.')
 
     }
 

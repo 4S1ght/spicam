@@ -46,7 +46,8 @@ const ZConfig = z.object({
         threshold: z.number().min(0).max(1),
     }),
 
-    battery: z.object({
+    bms: z.object({
+        enabled: z.boolean(),
         shutdownThreshold: z.number().min(1).max(100),
     }),
 
