@@ -1,8 +1,18 @@
-# The contents of this file are the intellectual property of Waveshare - https://www.waveshare.com/
-# This battery monitoring script has been downloaded and unpacked from https://files.waveshare.com/upload/4/40/UPS_HAT_C.7z
+# Imports ==============================================================================================================
 
 import smbus
 import time
+import json
+import argparse
+
+# Script parameters ====================================================================================================
+
+parser = argparse.ArgumentParser(description='INA219 Pi Zero PSU monitoring script')
+parser.add_argument('--polling', type=int, default=1, help='Number of seconds between polling the PSU status.')
+
+args = parser.parse_args()
+
+# UPS constants ========================================================================================================
 
 # Config Register (R/W)
 _REG_CONFIG                 = 0x00
@@ -52,12 +62,13 @@ class Mode:
     POWERDOW                = 0x00      # power down
     SVOLT_TRIGGERED         = 0x01      # shunt voltage triggered
     BVOLT_TRIGGERED         = 0x02      # bus voltage triggered
-    SANDBVOLT_TRIGGERED     = 0x03      # shunt and bus voltage triggered
+    SANDBVOLT_TRIGGERED     = 0x03      # shunt and bus voltage triggereds
     ADCOFF                  = 0x04      # ADC off
     SVOLT_CONTINUOUS        = 0x05      # shunt voltage continuous
     BVOLT_CONTINUOUS        = 0x06      # bus voltage continuous
     SANDBVOLT_CONTINUOUS    = 0x07      # shunt and bus voltage continuous
 
+# Monitoring classes ===================================================================================================
 
 class INA219:
     def __init__(self, i2c_bus=1, addr=0x40):
@@ -190,27 +201,34 @@ class INA219:
         if value > 32767:
             value -= 65535
         return value * self._power_lsb
+    
+# Init =================================================================================================================
         
 if __name__=='__main__':
 
-    # Create an INA219 instance.
     ina219 = INA219(addr=0x43)
+
     while True:
-        bus_voltage = ina219.getBusVoltage_V()             # voltage on V- (load side)
-        shunt_voltage = ina219.getShuntVoltage_mV() / 1000 # voltage between V+ and V- across the shunt
-        current = ina219.getCurrent_mA()                   # current in mA
-        power = ina219.getPower_W()                        # power in W
-        p = (bus_voltage - 3)/1.2*100
-        if(p > 100):p = 100
-        if(p < 0):p = 0
+
+        bus_voltage   = ina219.getBusVoltage_V()            # voltage on V- (load side)
+        shunt_voltage = ina219.getShuntVoltage_mV() / 1000  # voltage between V+ and V- across the shunt
+        current       = ina219.getCurrent_mA()              # current in mA
+        power         = ina219.getPower_W()                 # power in W
+        percent       = (bus_voltage - 3)/1.2*100
+        
+        if percent > 100: percent = 100
+        if percent < 0:   percent = 0
 
         # INA219 measure bus voltage on the load side. So PSU voltage = bus_voltage + shunt_voltage
-        #print("PSU Voltage:   {:6.3f} V".format(bus_voltage + shunt_voltage))
-        #print("Shunt Voltage: {:9.6f} V".format(shunt_voltage))
-        print("Load Voltage:  {:6.3f} V".format(bus_voltage))
-        print("Current:       {:6.3f} A".format(current/1000))
-        print("Power:         {:6.3f} W".format(power))
-        print("Percent:       {:3.1f}%".format(p))
-        print("")
+        print(json.dumps(
+            {
+                'voltage_psu':    bus_voltage + shunt_voltage,
+                'voltage_shunt':  shunt_voltage,
+                'voltage_bus':    bus_voltage,      # Primary voltage
+                'current':        current / 1000,   #
+                'power':          power,            #
+                'battery_charge': percent           # Reads lower when under heavy load.
+            }
+        ), flush=True)
 
-        time.sleep(2)
+        time.sleep(args.polling)

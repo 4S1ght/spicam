@@ -18,7 +18,9 @@ const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 // Types ===============================================================================================================
 
 interface BMSReadout {
-    voltage: number
+    voltage_psu: number
+    voltage_shunt: number
+    voltage_bus: number
     current: number
     power: number
     charge: number
@@ -38,7 +40,7 @@ export default class I2CBMSService extends EventEmitter {
     public static name = 'bms'
     public static deps = ['logging', 'config']
 
-    private integrationScript = path.join(dirname, '../../python/INA219.py')
+    private integrationScript = path.join(dirname, '../../python/INA219_PSU.py')
     private cp: cp.ChildProcess | null = null
     private stopped = false
 
@@ -68,7 +70,7 @@ export default class I2CBMSService extends EventEmitter {
 
         if (!PythonUtils.isAvailable('smbus')) {
             this.ls.error('The "smbus" python module is not available. Aborting.')
-            await ProcessUtils.delayedExit(100, 101)
+            await ProcessUtils.delayedExit(1000, 101)
         }
 
         await this.start()
@@ -93,9 +95,12 @@ export default class I2CBMSService extends EventEmitter {
         if (!this.cp || typeof this.cp.exitCode === 'number') {
 
             this.ls.info('Starting BMS script...')
-
             this.stopped = false
-            const child = cp.spawn('python3', ['-u', this.integrationScript], { stdio: ['ignore', 'pipe', 'pipe'] })
+
+            const child = cp.spawn('python3', [
+                '-u', this.integrationScript,
+                '--polling', '1', 
+            ], { stdio: ['ignore', 'pipe', 'pipe'] })
 
             await new Promise<void>((resolve, reject) => {
                 
@@ -164,65 +169,26 @@ export default class I2CBMSService extends EventEmitter {
 
     }
 
-    /**
-     * Format:
-     * Load Voltage:   4.136 V
-     * Current:        0.921 A
-     * Power:          3.804 W
-     * Percent:        94.7%
-     */
-    private outputReg = /^\s*(Load Voltage|Current|Power|Percent):\s*(-?\d+(?:\.\d+)?)\s*[AVW%]?/
     private debugCounter = 0
     private debugCycle = 300
 
     private processOutput(output: string) {
 
-        const readout: Partial<BMSReadout> = {}
+        const info: BMSReadout = JSON.parse(output)
+        this.emit('info', info)
 
-        for (const line of output.split('\n')) {
+        if (this.debugCounter++ >= this.debugCounter) {
 
-            const match = line.match(this.outputReg)
-            if (!match) continue
-
-            const [, label, valueString] = match
-            const value = parseFloat(valueString!)
-
-            switch (label) {
-                case 'Load Voltage':
-                    readout.voltage = value
-                    break
-                case 'Current':
-                    readout.current = value
-                    break
-                case 'Power':
-                    readout.power = value
-                    break
-                case 'Percent':
-                    readout.charge = value
-                    break
-            }
-
-        }
-        
-        // Emit only when all props are present.
-        // Python scripts can print out messages inconsistently in multiple chunks.
-        // Any partial or malformed chunks are therefore discarded here.
-        if (
-            readout.voltage != null &&
-            readout.current != null &&
-            readout.power != null &&
-            readout.charge != null
-        ) {
-            this.emit('info', readout as BMSReadout)
-
-            if (++this.debugCounter >= this.debugCycle) {
-                this.debugCounter = 0
-                this.ls.debug(`BMS Readout:`)
-                this.ls.debug(`\tVoltage: ${readout.voltage}`)
-                this.ls.debug(`\tCurrent: ${readout.current}`)
-                this.ls.debug(`\tPower:   ${readout.power}`)
-                this.ls.debug(`\tCharge:  ${readout.charge}`)
-            }
+            this.debugCounter = 0
+            const debugInfo: string[] = ['BMS status |']
+            
+            debugInfo.push(`Voltage: ${info.voltage_bus}`)
+            debugInfo.push(`Shunt Voltage: ${info.voltage_shunt}`)
+            debugInfo.push(`PSU Voltage: ${info.voltage_psu}`)
+            debugInfo.push(`Current: ${info.current}`)
+            debugInfo.push(`Power: ${info.power}`)
+            debugInfo.push(`Charge: ${info.charge}`)
+            this.ls.info(debugInfo.join(' '))
 
         }
 

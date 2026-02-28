@@ -4,7 +4,7 @@ import DependencyLoadContext from 'depload'
 
 import ConfigService  from './config/Config.service.ts'
 import LoggingService from './logging/Logging.service.ts'
-import I2CBMSService  from './integrations/I2C_BMS.service.ts'
+import I2CBMSService  from './integrations/BMS.service.ts'
 
 // App ================================================================================================================
 
