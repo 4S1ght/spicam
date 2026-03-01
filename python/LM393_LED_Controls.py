@@ -7,16 +7,20 @@ import select
 import argparse
 
 from gpiozero import DigitalInputDevice
+from Helpers import BinarySensorDenoise
 
 # Globals ==============================================================================================================
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--light-polling', type=int, default=1,   help='Number of seconds between polling the light sensor.')
-parser.add_argument('--stdin-polling', type=float, default=0.5, help='Number of seconds between polling the stdin stream.')
+parser.add_argument('--light-polling',          type=int,   default=1,   help='Number of seconds between polling the light sensor.')
+parser.add_argument('--stdin-polling',          type=float, default=0.5, help='Number of seconds between polling the stdin stream.')
+parser.add_argument('--light-sensor-threshold', type=float, default=0.2, help='The average percentage of time the light sensor has to report low light for low light signal to be emitted.')
+parser.add_argument('--light-sensor-window',    type=int,   default=600, help='The number of sensor measurements to keep track of and calculate the average of.')
 argv = parser.parse_args()
 
-GPIO_day_sensor = DigitalInputDevice(24, pull_up=False)
 shutdown_event = threading.Event()
+
+GPIO_LIGHT_SENSOR = DigitalInputDevice(24, pull_up=False)
 
 # STDIN dispatcher =====================================================================================================
 
@@ -30,8 +34,8 @@ def stdin_reader():
             (command, *args) = line.strip().split(' ')
 
             if command == 'led':
-                if (args[0] == 'up'): continue
-                if (args[0] == 'down'): continue
+                if args[0] == 'up': continue
+                if args[0] == 'down': continue
 
         if shutdown_event.is_set(): break
         
@@ -41,11 +45,19 @@ reader_thread.start()
 
 # STDOUT emitter =======================================================================================================
 
-# TODO: add denoise/denoise
-
 def day_sensor():
+
+    history = BinarySensorDenoise(
+        window_size = argv.light_sensor_window,
+        threshold = argv.light_sensor_threshold
+    )
+
     while not shutdown_event.is_set():
-        print(f'light_level:{abs(GPIO_day_sensor.value-1)}')
+        
+        sensor_value = GPIO_LIGHT_SENSOR.value
+        smoothed_value = history.update(sensor_value)
+
+        print(f'light_level:{smoothed_value}')
         time.sleep(argv.light_polling)
 
 sensor_thread = threading.Thread(target=day_sensor)

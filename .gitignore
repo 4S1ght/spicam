@@ -1,16 +1,6 @@
-*
+etc/
+node_modules/
+old/
 
-!node/
-!node/**
-
-!python/
-!python/**
-
-!.gitignore
-!LICENSE
-!package.json
-!package-lock.json
-!README.md
-!tsconfig.json
-!config.yaml
-!setup.sh
+__pycache__
+test.*
