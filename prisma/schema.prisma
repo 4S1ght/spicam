@@ -1,0 +1,26 @@
+generator client {
+    provider = "prisma-client-js"
+    output   = "../etc/db-client"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = "file:../etc/main.db"
+}
+
+model User {
+    name String @id
+    pass String
+}
+
+model Session {
+    id      String   @id
+    name    String
+    updated DateTime @updatedAt
+}
+
+model Settings {
+    key     String   @id
+    value   String
+    updated DateTime @updatedAt
+}

@@ -1,0 +1,117 @@
+// Imports =============================================================================================================
+
+import argon2 from 'argon2'
+import prisma from "../../etc/db-client/index.js"
+
+import type LoggingService   from '../logging/Logging.service.ts'
+import type ConfigService    from '../config/Config.service.ts'
+import type { LoggingScope } from '../logging/Logging.service.ts'
+
+// Types ===============================================================================================================
+
+// Types ===============================================================================================================
+
+// Service =============================================================================================================
+
+export default class DatabaseService {
+
+    public static name = 'db'
+    public static deps = ['logging']
+
+    private log:    LoggingService
+    private ls:     LoggingScope
+    public  client: prisma.PrismaClient
+
+    constructor(deps: { logging: LoggingService  }) {
+        this.log    = deps.logging
+        this.client = new prisma.PrismaClient()
+        this.ls     = this.log.getScope(import.meta.url)
+    }
+
+    public async initializer() {
+
+        this.ls.info('Starting DB service...')
+        await this.client.$connect()
+        await this.seed()
+        this.periodicCleanSessions()
+        this.ls.info('DB service started.')
+
+    }
+
+    public async destructor() {
+        this.ls.info('Stopping DB service...')
+        this.stopCleaningSessions()
+        await this.client.$disconnect()
+        this.ls.info('DB service stopped.')
+    }
+
+
+    private async seed() {
+
+        const seeded = await this.getSetting('seeded')
+
+        if (!seeded) {
+
+            this.ls.warn('The database is being seeded.')
+        
+            await this.client.user.create({
+                data: {
+                    name: 'root',
+                    pass: await argon2.hash('root', {
+                        memoryCost: 32 * 1024,
+                        parallelism: 1,
+                    })
+                }
+        
+            })
+        
+            this.ls.warn('A new default user was created with username "root" and password "root". Log in and immediately change the password!')
+
+            await this.client.settings.createMany({
+                data: [
+
+                    // Misc
+                    { key: 'seeded', value: 'true' },
+
+                    // DB settings
+                    { key: 'session_duration', value: '60' }
+
+                ]
+            })
+        
+        }
+
+    }
+
+    public async getSetting(key: string) {
+        const setting = await this.client.settings.findFirst({ where: { key }, select: { value: true } })
+        return setting && setting.value
+    }
+
+    private declare sessionCleanInterval: NodeJS.Timeout
+
+    private periodicCleanSessions() {
+        this.sessionCleanInterval = setInterval(async () => {
+            try {
+
+                const sessionDuration = parseInt(await this.getSetting('session_duration') as string)
+                const expiryPoint = new Date(Date.now() - sessionDuration * 60 * 1000)
+                const sessions = await this.client.session.findMany({ where: { updated: { lt: expiryPoint } } })
+
+                for (const session of sessions) {
+                    await this.client.session.delete({ where: { id: session.id } })
+                    this.ls.info(`Session "${session.id}" of user "${session.name}" expired.`)
+                }
+
+            }
+            catch (error) {
+                this.ls.error(error!)
+            }
+        }, 1000*60*5)
+    }
+
+    private stopCleaningSessions() {
+        clearInterval(this.sessionCleanInterval)
+    }
+
+}
