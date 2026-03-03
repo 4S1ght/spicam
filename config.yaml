@@ -1,6 +1,7 @@
-motionDetect:           ### Motion detection ###
-  probing: 2            # Frequency of how often a second to probe the camera for motion.
-  threshold: 0.07       # Minimum hamming distance of probed frames that triggers a motion event.
+# Will be moved to the DB settings as it's non-crucial for startup.
+# motionDetect:           ### Motion detection ###
+#   probing: 2            # Frequency of how often a second to probe the camera for motion.
+#   threshold: 0.07       # Minimum hamming distance of probed frames that triggers a motion event.
 
 bms:                    ### Battery monitoring ###
   enabled: false        # Whether to enable battery monitoring.
@@ -13,4 +14,6 @@ logging:                ### Logging ###
   maxLogSize: 20MB      # Maximum log file size in bytes.
 
 web:                    ### Web server ###
-  port: 8000            # Port to run the web server on.
+  port: 80              # Port used by the HTTP web server - Always active, used as primary server or redirect to HTTPS.
+  securePort: 443       # Port used by the HTTPS (secure) web server with encryption.
+  enableHTTPS: true     # Whether to enable HTTPS.

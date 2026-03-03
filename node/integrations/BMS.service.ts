@@ -58,10 +58,6 @@ export default class I2CBMSService extends EventEmitter {
         this.ls = this.logging.getScope(import.meta.url)
         this.config = deps.config
 
-        process.on('SIGTERM', () => this.stop())
-        process.on('SIGINT',  () => this.stop())
-        process.on('exit',    () => this.stop())
-
     }
 
     public async initializer() {
@@ -80,9 +76,9 @@ export default class I2CBMSService extends EventEmitter {
     }
 
     public async destructor() {
-        this.ls.info('Stopping service...')
+        this.ls.info('Stopping BMS service...')
         await this.stop()
-        this.ls.info('Service stopped.')
+        this.ls.info('BMS service stopped.')
     }
 
     private async start() {
@@ -129,15 +125,18 @@ export default class I2CBMSService extends EventEmitter {
 
     private async stop() {
 
+        if (this.stopped == true) return
         this.stopped = true
+
         this.ls.info('Stopping BMS script...')
 
         await new Promise<Error | undefined>((resolve) => {
-            if (this.cp &&  this.cp.exitCode === null) {
+            if (this.cp && this.cp.exitCode === null) {
                 this.cp.on('close', resolve)
                 this.cp.on('error', resolve)
                 this.cp.kill()
             }
+            else resolve(undefined)
         })
 
         this.cp = null
@@ -169,6 +168,7 @@ export default class I2CBMSService extends EventEmitter {
 
     }
 
+
     private debugCounter = 0
     private debugCycle = 300
 
@@ -177,21 +177,20 @@ export default class I2CBMSService extends EventEmitter {
         const info: BMSReadout = JSON.parse(output)
         this.emit('info', info)
 
-        if (this.debugCounter++ >= this.debugCounter) {
+        if (this.debugCounter++ % this.debugCycle === 0) {
 
-            this.debugCounter = 0
             const debugInfo: string[] = ['BMS status |']
-            
+
             debugInfo.push(`Voltage: ${info.voltage_bus}`)
             debugInfo.push(`Shunt Voltage: ${info.voltage_shunt}`)
             debugInfo.push(`PSU Voltage: ${info.voltage_psu}`)
             debugInfo.push(`Current: ${info.current}`)
             debugInfo.push(`Power: ${info.power}`)
             debugInfo.push(`Charge: ${info.charge}`)
-            this.ls.info(debugInfo.join(' '))
+            this.ls.info(debugInfo.join(' | '))
 
-        }
-
+        }   
+        
     }
 
 }

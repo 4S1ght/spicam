@@ -74,7 +74,21 @@ export default class DatabaseService {
                     { key: 'seeded', value: 'true' },
 
                     // DB settings
-                    { key: 'session_duration', value: '60' }
+                    { key: 'session_duration', value: '60' },
+
+                    // Motion detection settings
+                    { key: 'motion_detect_frame_width',  value: '640'     },
+                    { key: 'motion_detect_frame_height', value: '480'     },
+                    { key: 'motion_detect_frame_rate',   value: '2'       },
+                    { key: 'motion_detect_min_diff',     value: '0.07'    },
+                    { key: 'motion_detect_framebuf',     value: '65536'   },
+
+                    // Recording settings
+                    { key: 'recording_frame_width',      value: '1920'    },
+                    { key: 'recording_frame_height',     value: '1080'    },
+                    { key: 'recording_frame_rate',       value: '15'      },
+                    { key: 'recording_duration_seconds', value: '60'      },
+                    { key: 'recording_bitrate',          value: '1000000' },
 
                 ]
             })
@@ -86,6 +100,14 @@ export default class DatabaseService {
     public async getSetting(key: string) {
         const setting = await this.client.settings.findFirst({ where: { key }, select: { value: true } })
         return setting && setting.value
+    }
+
+    public async setSetting(key: string, value: string) {
+        await this.client.settings.upsert({
+            where: { key },
+            update: { value },
+            create: { key, value }
+        })
     }
 
     private declare sessionCleanInterval: NodeJS.Timeout

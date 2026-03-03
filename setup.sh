@@ -35,5 +35,20 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
 \. "$HOME/.nvm/nvm.sh"
 nvm install --lts
 
+# Port binding =========================================================================================================
+
+# This step is here mostly for development purposes so that the app can be ran
+# and tested on the correct ports.
+
+echo -e "${Y}Enabling privileged port binding for NodeJS${NC}"
+
+node_binary="$(readlink -f "$(command -v node)")"
+sudo setcap 'cap_net_bind_service=+ep' "$node_binary"
+
+echo -e "${G}Granted access to priviliged port binding (1-1023) to the Node runtime.${NC}"
+
+# Finished =============================================================================================================
+
 echo -e "${R}Install complete. Reboot the device for changes to take effect.${NC}"
+
 

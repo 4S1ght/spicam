@@ -41,11 +41,6 @@ export default class ConfigService {
 
 const ZConfig = z.object({
 
-    motionDetect: z.object({
-        probing: z.number().min(1).max(10),
-        threshold: z.number().min(0).max(1),
-    }),
-
     bms: z.object({
         enabled: z.boolean(),
         shutdownThreshold: z.number().min(1).max(100),
@@ -60,6 +55,8 @@ const ZConfig = z.object({
 
     web: z.object({
         port: z.number().min(1).max(65535),
+        securePort: z.number().min(1).max(65535),
+        enableHTTPS: z.boolean(),
     })
 
 })
