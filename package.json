@@ -7,7 +7,8 @@
     "test": "vitest",
     "dev": "node --watch ./node/main.ts",
     "pm": "prisma migrate dev --schema=./prisma/schema.prisma",
-    "pg": "prisma generate client --schema=./prisma/schema.prisma"
+    "pg": "prisma generate client --schema=./prisma/schema.prisma",
+    "pr": "npx prisma migrate reset --schema=./prisma/schema.prisma"    
   },
   "repository": {
     "type": "git",

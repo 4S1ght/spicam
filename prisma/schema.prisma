@@ -22,5 +22,6 @@ model Session {
 model Settings {
     key     String   @id
     value   String
+    default String
     updated DateTime @updatedAt
 }

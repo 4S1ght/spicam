@@ -4,7 +4,6 @@ import argon2 from 'argon2'
 import prisma from "../../etc/db-client/index.js"
 
 import type LoggingService   from '../logging/Logging.service.ts'
-import type ConfigService    from '../config/Config.service.ts'
 import type { LoggingScope } from '../logging/Logging.service.ts'
 
 // Types ===============================================================================================================
@@ -71,25 +70,41 @@ export default class DatabaseService {
                 data: [
 
                     // Misc
-                    { key: 'seeded', value: 'true' },
+                    { key: 'seeded', value: 'true', default: 'true' },
 
                     // DB settings
-                    { key: 'session_duration', value: '60' },
+                    { key: 'session_duration', value: '60', default: '60' },
+
+                    // General camera settings
+                    { key: 'night_vision_contrast', value: '1.1', default: '1.1' },
+                    { key: 'night_vision_gain',     value: '6.0', default: '6.0' },
 
                     // Motion detection settings
-                    { key: 'motion_detect_frame_width',  value: '640'     },
-                    { key: 'motion_detect_frame_height', value: '480'     },
-                    { key: 'motion_detect_frame_rate',   value: '2'       },
-                    { key: 'motion_detect_min_diff',     value: '0.07'    },
-                    { key: 'motion_detect_framebuf',     value: '65536'   },
+                    { key: 'motion_detect_frame_width',  value: '1920',    default: '1920'    },
+                    { key: 'motion_detect_frame_height', value: '1080',    default: '1080'    },
+                    { key: 'motion_detect_frame_rate',   value: '2',       default: '2'       },
+                    { key: 'motion_detect_min_diff',     value: '0.07',    default: '0.07'    },
+                    { key: 'motion_detect_max_diff',     value: '0.35',    default: '0.35'    },
+                    { key: 'motion_detect_framebuf',     value:  2**18+'', default:  2**18+'' },
 
                     // Recording settings
-                    { key: 'recording_frame_width',      value: '1920'    },
-                    { key: 'recording_frame_height',     value: '1080'    },
-                    { key: 'recording_frame_rate',       value: '15'      },
-                    { key: 'recording_duration_seconds', value: '60'      },
-                    { key: 'recording_bitrate',          value: '1000000' },
+                    { key: 'recording_frame_width',      value: '1920',    default: '1920'    },
+                    { key: 'recording_frame_height',     value: '1080',    default: '1080'    },
+                    { key: 'recording_frame_rate',       value: '15',      default: '15'      },
+                    { key: 'recording_duration_seconds', value: '30',      default: '30'      },
+                    { key: 'recording_bitrate',          value: '1000000', default: '1000000' },
 
+                    // Live preview settings
+                    { key: 'live_preview_frame_width',   value: '640',     default: '640'     },
+                    { key: 'live_preview_frame_height',  value: '360',     default: '360'     },
+                    { key: 'live_preview_frame_rate',    value: '15',      default: '15'      },
+                    { key: 'live_preview_bitrate',       value: '1000000', default: '1000000' },
+
+                    // Light controls settings
+                    { key: 'led_controls_stdin_polling', value: '1',        default: '1'    },
+                    { key: 'led_controls_light_polling', value: '1',        default: '1'    },
+                    { key: 'light_sensor_threshold',     value: '0.2',      default: '0.2'  },
+                    { key: 'light_sensor_window',        value: '600',      default: '600'  },
                 ]
             })
         
@@ -97,7 +112,10 @@ export default class DatabaseService {
 
     }
 
+    private settingCache = new Map<string, string>()
+
     public async getSetting(key: string) {
+        if (this.settingCache.has(key)) return this.settingCache.get(key)
         const setting = await this.client.settings.findFirst({ where: { key }, select: { value: true } })
         return setting && setting.value
     }
@@ -106,9 +124,18 @@ export default class DatabaseService {
         await this.client.settings.upsert({
             where: { key },
             update: { value },
-            create: { key, value }
+            create: { key, value, default: value },
         })
+        this.settingCache.set(key, value)
     }
+
+    public async resetSetting(key: string) {
+        const setting = await this.client.settings.findFirst({ where: { key }, select: { default: true } })
+        if (setting) {
+            await this.client.settings.update({ where: { key }, data: { value: setting.default } })
+            this.settingCache.set(key, setting.default)
+        }
+    } 
 
     private declare sessionCleanInterval: NodeJS.Timeout
 
