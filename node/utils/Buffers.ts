@@ -3,6 +3,8 @@ export class FrameBuffer {
     private cursor = 0
     private buf: Buffer
 
+    public get size() { return this.buf.byteLength }
+
     constructor(size: number) {
         this.buf = Buffer.allocUnsafe(size)
     }

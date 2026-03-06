@@ -18,7 +18,7 @@ const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 interface LightControlService {
     on(event: 'light-level', listener: (level: 'day' | 'night') => void): this
 }
-class LightConftrolService extends EventEmitter {
+class LightControlService extends EventEmitter {
 
     public static name = 'light_control'
     public static deps = ['logging', 'db']
@@ -119,4 +119,4 @@ class LightConftrolService extends EventEmitter {
 
 }
 
-export default LightConftrolService
+export default LightControlService

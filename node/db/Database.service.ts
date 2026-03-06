@@ -76,8 +76,8 @@ export default class DatabaseService {
                     { key: 'session_duration', value: '60', default: '60' },
 
                     // General camera settings
-                    { key: 'night_vision_contrast', value: '1.1', default: '1.1' },
-                    { key: 'night_vision_gain',     value: '6.0', default: '6.0' },
+                    { key: 'night_vision_contrast', value: '1.2', default: '1.2' },
+                    { key: 'night_vision_gain',     value: '20',  default: '20'  },
 
                     // Motion detection settings
                     { key: 'motion_detect_frame_width',  value: '1920',    default: '1920'    },
@@ -85,7 +85,6 @@ export default class DatabaseService {
                     { key: 'motion_detect_frame_rate',   value: '2',       default: '2'       },
                     { key: 'motion_detect_min_diff',     value: '0.07',    default: '0.07'    },
                     { key: 'motion_detect_max_diff',     value: '0.35',    default: '0.35'    },
-                    { key: 'motion_detect_framebuf',     value:  2**18+'', default:  2**18+'' },
 
                     // Recording settings
                     { key: 'recording_frame_width',      value: '1920',    default: '1920'    },

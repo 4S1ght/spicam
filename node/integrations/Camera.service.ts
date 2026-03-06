@@ -62,9 +62,11 @@ export default class CameraService {
 
     private motionDetectProcess: cp.ChildProcess | null = null
     private shouldProcessMotion = false
+    private currentFrameSize = { width: 0, height: 0 }
 
     private async startMotionDetect() {
 
+        // Kill old process if it exists so the mrthod can be used to restart it.
         const mdp = this.motionDetectProcess
         if (mdp && mdp.exitCode === null && mdp.killed === false) {
             mdp.kill('SIGTERM')
@@ -81,13 +83,19 @@ export default class CameraService {
         const framerate   = await this.db.getSetting('motion_detect_frame_rate')   as string
         const minDiff     = await this.db.getSetting('motion_detect_min_diff')     as string
         const maxDiff     = await this.db.getSetting('motion_detect_max_diff')     as string
-        const bufferSize  = await this.db.getSetting('motion_detect_framebuf')     as string
 
-        this.ls.info(`Motion detect running at ${frameWidth}x${frameHeight}p/${framerate}fps, hamming diff: ${minDiff}-${maxDiff}, frame buffer: ${(parseInt(bufferSize)/1000).toFixed(1)}kB.`)
+        this.ls.info(`Motion detect running at ${frameWidth}x${frameHeight}p/${framerate}fps, hamming diff: ${minDiff}-${maxDiff}.`)
 
-        this.fb = new FrameBuffer(parseInt(bufferSize))
+        const fh = parseInt(frameHeight)
+        const fw = parseInt(frameWidth)
 
-        // These need a reset each start of motion detection, or else a "revious frame" from minutes ago
+        if (this.currentFrameSize.width !== fw || this.currentFrameSize.height !== fh) {
+            this.currentFrameSize = { width: fw, height: fh }
+            this.fb = null as unknown as FrameBuffer
+            this.ls.info(`Cold start or change in motion detection frame size detected (${fw}x${fh}p). The frame buffer needs recalibrating.`)
+        }
+
+        // These need a reset each start of motion detection, or else a "previous frame" from minutes ago
         // might be compared with a "current frame" and their difference may false trigger in a loop.
         this.previousFrame = null
         this.currentFrame = null
@@ -112,7 +120,33 @@ export default class CameraService {
             
         })
 
-        child.stdout.on('data', (data: Buffer) => this.processMotionStream(data, parseFloat(minDiff), parseFloat(maxDiff)))
+        let frameSize = 0
+
+        // The MJPEG stream is sent for motion detection after the frame buffer's size is calibrated based on
+        // the size of the first received MJPEG frame. Due to some variations in the output stream from rpicam-vid,
+        // The size of the buffer might differ between runs, but is guaranteed to adjust to the frame size and prevent
+        // crashes due to misconfiguration.
+        child.stdout.on('data', (data: Buffer) => {
+            if (!this.fb) {
+
+                const EOI = Buffer.from([0xFF, 0xD9])
+                const eoi = data.indexOf(EOI)
+            
+                frameSize += eoi === -1 ? data.byteLength : eoi
+
+                if (eoi) {
+                    this.fb = new FrameBuffer(frameSize * 5)
+                    this.ls.info(`Frame buffer calibrated to size ${(this.fb.size/1000).toFixed(1)} kB for frame size of ${fw}x${fh}p. Restarting motion detection...`)
+                    this.shouldProcessMotion = false
+                    this.startMotionDetect()
+                }
+
+            }
+            else {
+                this.processMotionStream(data, parseFloat(minDiff), parseFloat(maxDiff))
+            }
+        })
+
         child.stderr.on('data', (data: Buffer) => this.processMotionDebug(data))
 
     }
@@ -158,6 +192,13 @@ export default class CameraService {
         const start  = buffer.indexOf(this.SOI)
         const end    = buffer.lastIndexOf(this.EOI)
 
+        if (start !== -1 && end !== -1 && start > end) {
+            this.ls.error('Invalid frame data received. Start of Image (SOI) marker found after End of Image (EOI) marker. Restarting motion detection to recover from potential stream desynchronization.')
+            this.shouldProcessMotion = false
+            this.startMotionDetect()
+            return
+        }
+
         // start & end found
         if (start > -1 && end > -1) {
 
@@ -184,16 +225,16 @@ export default class CameraService {
         else {
             this.markMissCounter++
             if (this.markMissCounter === 50) {
-                this.ls.warn('Motion detect stream: No SOI/EOI found in the stream and reached maximum allowed value. Resetting the motion detect settings to safe defaults.')
+                this.ls.warn('Motion detect stream: No SOI/EOI found in the stream for a prolonged period. Resetting the motion detection settings to safe defaults.')
                 await this.db.resetSetting('motion_detect_frame_width')
                 await this.db.resetSetting('motion_detect_frame_height')
                 await this.db.resetSetting('motion_detect_frame_rate')
                 await this.db.resetSetting('motion_detect_min_diff')
                 await this.db.resetSetting('motion_detect_max_diff')
-                await this.db.resetSetting('motion_detect_framebuf')
                 this.ls.warn('Settings reset successfully.')
                 this.markMissCounter = 0
                 await this.startMotionDetect()
+                process.exit()
             }
         }
     
