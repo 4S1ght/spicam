@@ -76,8 +76,8 @@ export default class DatabaseService {
                     { key: 'session_duration', value: '60', default: '60' },
 
                     // General camera settings
-                    { key: 'night_vision_contrast', value: '1.2', default: '1.2' },
-                    { key: 'night_vision_gain',     value: '20',  default: '20'  },
+                    { key: 'night_vision_contrast', value: '1.25', default: '1.25' },
+                    { key: 'night_vision_gain',     value: '20',   default: '20'   },
 
                     // Motion detection settings
                     { key: 'motion_detect_frame_width',  value: '1920',    default: '1920'    },
@@ -90,12 +90,12 @@ export default class DatabaseService {
                     { key: 'recording_frame_width',      value: '1920',    default: '1920'    },
                     { key: 'recording_frame_height',     value: '1080',    default: '1080'    },
                     { key: 'recording_frame_rate',       value: '15',      default: '15'      },
-                    { key: 'recording_duration_seconds', value: '30',      default: '30'      },
+                    { key: 'recording_duration_seconds', value: '60',      default: '60'      },
                     { key: 'recording_bitrate',          value: '1000000', default: '1000000' },
 
                     // Live preview settings
-                    { key: 'live_preview_frame_width',   value: '640',     default: '640'     },
-                    { key: 'live_preview_frame_height',  value: '360',     default: '360'     },
+                    { key: 'live_preview_frame_width',   value: '1920',     default: '1920'   },
+                    { key: 'live_preview_frame_height',  value: '1080',     default: '1080'   },
                     { key: 'live_preview_frame_rate',    value: '15',      default: '15'      },
                     { key: 'live_preview_bitrate',       value: '1000000', default: '1000000' },
 
@@ -104,6 +104,7 @@ export default class DatabaseService {
                     { key: 'led_controls_light_polling', value: '1',        default: '1'    },
                     { key: 'light_sensor_threshold',     value: '0.2',      default: '0.2'  },
                     { key: 'light_sensor_window',        value: '600',      default: '600'  },
+                    
                 ]
             })
         

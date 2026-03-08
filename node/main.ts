@@ -2,13 +2,14 @@
 
 import DependencyLoadContext from 'depload'
 
-import ConfigService        from './config/Config.service.ts'
-import LoggingService, { type LoggingScope }       from './logging/Logging.service.ts'
-import DatabaseService      from './db/Database.service.ts'
+import ConfigService                         from './config/Config.service.ts'
+import LoggingService, { type LoggingScope } from './logging/Logging.service.ts'
+import DatabaseService                       from './db/Database.service.ts'
 
-import I2CBMSService        from './integrations/BMS.service.ts'
-import CameraService        from './integrations/Camera.service.ts'
-import LightControlService  from './integrations/LightControl.service.ts'
+import I2CBMSService                         from './integrations/BMS.service.ts'
+import CameraService                         from './integrations/Camera.service.ts'
+import LightControlService                   from './integrations/LightControl.service.ts'
+import HTTPService                           from './web/HTTPService.ts'
 
 // App ================================================================================================================
 
@@ -20,6 +21,7 @@ dl.registerService(I2CBMSService)
 dl.registerService(DatabaseService)
 dl.registerService(CameraService)
 dl.registerService(LightControlService)
+dl.registerService(HTTPService)
 
 let stopping = false
 

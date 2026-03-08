@@ -5,10 +5,12 @@
   "main": "./node/main.ts",
   "scripts": {
     "test": "vitest",
+    "web": "npm --prefix ./web run dev",
     "dev": "node --watch ./node/main.ts",
     "pm": "prisma migrate dev --schema=./prisma/schema.prisma",
     "pg": "prisma generate client --schema=./prisma/schema.prisma",
-    "pr": "npx prisma migrate reset --schema=./prisma/schema.prisma"    
+    "pr": "npx prisma migrate reset --schema=./prisma/schema.prisma",
+    "ts": "tsc --watch"
   },
   "repository": {
     "type": "git",
@@ -23,7 +25,10 @@
   },
   "homepage": "https://github.com/4S1ght/spicam#readme",
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
     "@types/node": "^25.2.3",
+    "@types/node-forge": "^1.3.14",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
@@ -31,9 +36,11 @@
     "@prisma/client": "^6.17.1",
     "argon2": "^0.44.0",
     "chalk": "^5.6.2",
+    "cookie-parser": "^1.4.7",
     "depload": "^1.0.1",
     "express": "^5.2.1",
     "jimp": "^1.6.0",
+    "node-forge": "^1.3.3",
     "prisma": "^6.17.1",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",

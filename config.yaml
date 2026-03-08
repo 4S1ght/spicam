@@ -1,19 +1,24 @@
-# Will be moved to the DB settings as it's non-crucial for startup.
-# motionDetect:           ### Motion detection ###
-#   probing: 2            # Frequency of how often a second to probe the camera for motion.
-#   threshold: 0.07       # Minimum hamming distance of probed frames that triggers a motion event.
+bms:                            ### Battery monitoring ###
+  enabled: false                # Whether to enable battery monitoring.
+  shutdownThreshold: 30         # The percentage of battery which when reached will trigger a safe shutdown of the camera.
 
-bms:                    ### Battery monitoring ###
-  enabled: false        # Whether to enable battery monitoring.
-  shutdownThreshold: 30 # The percentage of battery which when reached will trigger a safe shutdown of the camera.
+logging:                        ### Logging ###
+  folder: ./etc/logs            # Directory to store the log files.
+  level: debug                  # Log level.
+  maxLogFiles: 5                # Maximum number of log files to keep.
+  maxLogSize: 20MB              # Maximum log file size in bytes.
 
-logging:                ### Logging ###
-  folder: ./etc/logs    # Directory to store the log files.
-  level: debug          # Log level.
-  maxLogFiles: 5        # Maximum number of log files to keep.
-  maxLogSize: 20MB      # Maximum log file size in bytes.
-
-web:                    ### Web server ###
-  port: 80              # Port used by the HTTP web server - Always active, used as primary server or redirect to HTTPS.
-  securePort: 443       # Port used by the HTTPS (secure) web server with encryption.
-  enableHTTPS: true     # Whether to enable HTTPS.
+web:                            ### Web server ###
+  port: 80                      # Port used by the HTTP web server - Always active, used as primary server or redirect to HTTPS.
+  securePort: 443               # Port used by the HTTPS (secure) web server with encryption.
+  enableTLS: false              # Whether to enable HTTPS.
+  ssl:
+    auto: true                  # Whether to automatically generate and use self-signed SSL certificates over the provided below.
+    key: ./etc/ssl/key.pem      # Path to the SSL key. (only use with auto: false whenever you want to use your own SSL certificate)
+    cert: ./etc/ssl/cert.pem    # Path to the SSL certificate. (only use with auto: false whenever you want to use your own SSL certificate)
+    lifespan: 365               # Lifespan of the auto-generated SSL certificate in days.
+    keySize: 2048               # Key size of the auto-generated SSL certificate.
+    commonName: 'spicam'        # Common name of the auto-generated SSL certificate.
+    countryName: ''             # Country name of the auto-generated SSL certificate.
+    localityName: ''            # Locality name of the auto-generated SSL certificate.
+    orgName: ''                 # Organization name of the auto-generated SSL certificate.

@@ -56,7 +56,18 @@ const ZConfig = z.object({
     web: z.object({
         port: z.number().min(1).max(65535),
         securePort: z.number().min(1).max(65535),
-        enableHTTPS: z.boolean(),
+        enableTLS: z.boolean(),
+        ssl: z.object({
+            auto: z.boolean(),
+            key: z.string(),
+            cert: z.string(),
+            lifespan: z.number().min(1),
+            keySize: z.number().min(1024),
+            commonName: z.string(),
+            countryName: z.string(),
+            localityName: z.string(),
+            orgName: z.string(),
+        })
     })
 
 })
