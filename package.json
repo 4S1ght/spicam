@@ -6,7 +6,8 @@
   "scripts": {
     "test": "vitest",
     "web": "npm --prefix ./web run dev",
-    "dev": "node --watch ./node/main.ts",
+    "dev": "export DEBUG_DISABLE_CAMERA=true && node --watch ./node/main.ts",
+    "dev:cam": "node --watch ./node/main.ts",
     "pm": "prisma migrate dev --schema=./prisma/schema.prisma",
     "pg": "prisma generate client --schema=./prisma/schema.prisma",
     "pr": "npx prisma migrate reset --schema=./prisma/schema.prisma",

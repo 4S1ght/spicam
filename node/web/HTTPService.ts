@@ -208,7 +208,7 @@ export default class HTTPService {
     private async login(req: Request, res: Response) {
         try {
 
-            const name = req.body.name
+            const name = req.body.username
             const pass = req.body.password
 
             if (!name || !pass) return res.status(401).end()
@@ -221,7 +221,7 @@ export default class HTTPService {
 
             const id = crypto.randomBytes(32).toString('base64url')
             const session = await this.db.client.session.create({ data: { id, name } })
-            res.cookie('sid', session.id, { httpOnly: true, secure: !!this.https, sameSite: 'none' })
+            res.cookie('sid', session.id, { httpOnly: true, secure: !!this.https, sameSite: 'strict' })
             res.status(200).end()
 
             this.ls.info(`New session created for user "${name}" - ${session.id.substring(0, 6)}...${session.id.substring(session.id.length - 6)}.`)

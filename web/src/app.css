@@ -1,0 +1,54 @@
+/* fonts ------------------------------------------------------------------------------------------------------------ */
+
+@font-face {
+    font-family: 'Inter';
+    src: url('/fonts/Inter-variable.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('/fonts/Inter-variable-italic.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* Top level variables ---------------------------------------------------------------------------------------------- */
+
+/* Palette: https://coolors.co/1d1f23-3f434c-ffffff-eeecea-74a0ff-ff5f67 */
+
+:root {
+
+    --font-main: 'Inter', sans-serif;
+
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #EEECEA;
+
+    --fg-primary: #1D1F23;
+    --fg-secondary: #1D1F23;
+    --fg-bleak: #61656d;
+    --fg-thin: #a0a6af;
+    --fg-border: #aeb3bd;
+
+    --fg-accent: #FF5F67;
+
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-main);
+    color: var(--fg-primary);
+    background-color: var(--bg-primary);
+}
+
+a, p, label {
+    letter-spacing: 0.01em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+}
