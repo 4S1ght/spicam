@@ -6,7 +6,12 @@ export default defineConfig({
     plugins: [
         svelte({
             compilerOptions: {
-                runes: true
+                runes: true,
+            },
+            onwarn(warning, handler) {
+                // ignore unused CSS selector warnings
+                if (warning.code === 'css_unused_selector') return
+                handler(warning)
             }
         })
     ],

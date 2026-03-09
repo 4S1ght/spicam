@@ -204,8 +204,8 @@ export default class HTTPService {
 
     // Methods ---------------------------------------------------------------------------------------------------------
 
-    private _login = ['POST', '/api/session/login']
-    private async login(req: Request, res: Response) {
+    public _login = ['POST', '/api/session/login']
+    public async login(req: Request, res: Response) {
         try {
 
             const name = req.body.username
@@ -226,6 +226,18 @@ export default class HTTPService {
 
             this.ls.info(`New session created for user "${name}" - ${session.id.substring(0, 6)}...${session.id.substring(session.id.length - 6)}.`)
 
+        } 
+        catch (error) {
+            this.ls.error(error!)
+            res.status(500).end()    
+        }
+    }
+
+    public _renewSession = ['POST', '/api/session/renew']
+    public async renewSession(req: Request, res: Response) {
+        try {
+            await this.db.client.session.update({ where: { id: req.session.id }, data: { updated: new Date() } })
+            res.status(200).send(JSON.stringify({ username: session.name })).end()
         } 
         catch (error) {
             this.ls.error(error!)

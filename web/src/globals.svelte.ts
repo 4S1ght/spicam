@@ -1,6 +1,8 @@
 
 const globals = $state({
-    loggedIn: false
+    loggedIn: false,
+    username: '',
+    route: ''
 })
 
 export default globals

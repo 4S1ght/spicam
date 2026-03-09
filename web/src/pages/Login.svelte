@@ -1,38 +1,58 @@
 <script lang="ts">
 
+    import { onMount } from 'svelte'
     import globals from '../globals.svelte'
+    import { goto } from '@mateothegreat/svelte5-router';
 
     let status = $state('')
     let statusCount = $state(0)
+    let hidden = $state(false)
 
     async function login(e: SubmitEvent) {
-        try {
 
-            e.preventDefault()
+        e.preventDefault()
 
-            const username = (e.target as HTMLFormElement).username.value
-            const password = (e.target as HTMLFormElement).password.value
+        const username = (e.target as HTMLFormElement).username.value
+        const password = (e.target as HTMLFormElement).password.value
 
-            const response = await fetch('/api/session/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            })
+        const response = await fetch('/api/session/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        })
 
-            if (response.status === 200) {
-                globals.loggedIn = true
-                status = 'Logged in.'
-            }
-            else {
-                if (response.statusText === status) statusCount++
-                status = response.statusText
-            }
-            
-        } 
-        catch (error) {
-            
+        if (response.status === 200) {
+            globals.loggedIn = true
+            status = 'Logged in.'
         }
+        else {
+            if (response.statusText === status) statusCount++
+            status = response.statusText
+        }
+
     }
+
+    async function renew() {
+
+        const response = await fetch('/api/session/renew', {
+            method: 'POST',
+        })
+
+        if (response.status === 200) {
+            globals.loggedIn = true
+            status = 'Logged in.'
+        }
+
+        hidden = true
+        setTimeout(() => {
+            goto('/home')
+        }, 100);
+
+    }
+
+    onMount(() => {
+        renew()
+    })
 
 </script>
 
@@ -50,6 +70,7 @@
         {/if}
     </form>
 </div>
+<div class="curtain {hidden ? 'hidden' : ''}" data-hide="false"></div>
 
 <style>
 
@@ -99,19 +120,42 @@
         button {
             border: solid 1px var(--fg-border);
             border-radius: 0.5rem;
-            border-width: 2px 2px 6px 2px;
+            border-width: 1px;
             padding: 0.75rem 1rem;
-            margin: 2.5rem 0 1rem 0;
+            margin: 2.5rem 0 2rem 0;
             display: block;
             width: 100%;
             cursor: pointer;
+            background-color: var(--bg-primary);
+            &:hover {
+                background-color: var(--bg-secondary);
+            }
         }
 
         .status {
             text-align: center;
-            color: var(--fg-bleak);
+            color: var(--fg-accent);
+            font-size: 0.85rem;
         }
 
+    }
+
+    .curtain {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 100%;
+        background-color: var(--bg-secondary);
+        z-index: 1000;
+        opacity: 0.85;
+        transition: opacity 0.7s;
+        
+        /* svelte-ignore css_unused_selector */
+        &.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
     }
 
 </style>
