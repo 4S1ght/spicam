@@ -10,6 +10,7 @@ import I2CBMSService                         from './integrations/BMS.service.ts
 import CameraService                         from './integrations/Camera.service.ts'
 import LightControlService                   from './integrations/LightControl.service.ts'
 import HTTPService                           from './web/HTTPService.ts'
+import VideoManagementService                from './integrations/VideoManagement.service.ts'
 
 // App ================================================================================================================
 
@@ -22,6 +23,7 @@ dl.registerService(DatabaseService)
 dl.registerService(CameraService)
 dl.registerService(LightControlService)
 dl.registerService(HTTPService)
+dl.registerService(VideoManagementService)
 
 let stopping = false
 

@@ -1,3 +1,5 @@
 {
-    "prisma.pinToPrisma6": true
+    "prisma.pinToPrisma6": true,
+    "svelte.plugin.svelte.diagnostics.enable": false
+
 }

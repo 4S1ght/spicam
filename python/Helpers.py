@@ -15,7 +15,7 @@ class BinarySensorDenoise:
         and calculates the average based on the window size.'''
         value = 1 if value else 0
 
-        # If buffer full, subtract the value that will be removed
+        # If buffer is full, subtract the value that will be removed
         if len(self.buffer) == self.window_size:
             self.running_sum -= self.buffer[0]
 

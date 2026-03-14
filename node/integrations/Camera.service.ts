@@ -43,7 +43,7 @@ export default class CameraService {
     public async initializer() {
         this.ls.info('Starting camera service...')
         if (process.env.DEBUG_DISABLE_CAMERA === 'true') 
-            return this.ls.warn('Camera service disabled by the environment settings.')
+            return this.ls.warn('Camera service disabled by the environment settings.') as any
         await fs.mkdir(this.outDir, { recursive: true })
         await this.startMotionDetect()
         this.startLifecycleUpkeep()

@@ -11,14 +11,15 @@ import express, { type Request, type RequestHandler, type Response }  from 'expr
 import cookies  from 'cookie-parser'
 import argon    from 'argon2'
 
-import type DatabaseService     from "../db/Database.service.ts"
-import type { LoggingScope }    from "../logging/Logging.service.ts"
-import type LoggingService      from "../logging/Logging.service.ts"
-import type ConfigService       from '../config/Config.service.ts'
-import x509                     from './x509.ts'
-import fsu                      from '../utils/Fs.ts'
-import requestLogging           from './middleware/RequestLogging.ts'
-import session                  from './middleware/Session.ts'
+import type DatabaseService        from "../db/Database.service.ts"
+import type { LoggingScope }       from "../logging/Logging.service.ts"
+import type LoggingService         from "../logging/Logging.service.ts"
+import type ConfigService          from '../config/Config.service.ts'
+import x509                        from './x509.ts'
+import fsu                         from '../utils/Fs.ts'
+import requestLogging              from './middleware/RequestLogging.ts'
+import session                     from './middleware/Session.ts'
+import type VideoManagementService from '../integrations/VideoManagement.service.ts'
 
 const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
@@ -27,22 +28,24 @@ const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 export default class HTTPService {
 
     public static name = 'http'
-    public static deps = ['logging', 'db', 'config']
+    public static deps = ['logging', 'db', 'config', 'vm']
 
     private ls: LoggingScope
     private db: DatabaseService
     private config: ConfigService['settings']
+    private videos: VideoManagementService
 
     private declare app: express.Express
     private declare http: http.Server
     private declare https: https.Server
     private declare server: http.Server | https.Server
 
-    constructor(deps: { logging: LoggingService, db: DatabaseService, config: ConfigService }) {
+    constructor(deps: { logging: LoggingService, db: DatabaseService, config: ConfigService, vm: VideoManagementService }) {
         
         this.ls = deps.logging.getScope(import.meta.url)
         this.db = deps.db
         this.config = deps.config.settings
+        this.videos = deps.vm
         this.app = express()
 
         this.app.use(requestLogging(deps.logging))
@@ -238,6 +241,38 @@ export default class HTTPService {
         try {
             await this.db.client.session.update({ where: { id: req.session.id }, data: { updated: new Date() } })
             res.status(200).send(JSON.stringify({ username: session.name })).end()
+        } 
+        catch (error) {
+            this.ls.error(error!)
+            res.status(500).end()    
+        }
+    }
+
+    public _listRecordings = ['GET', '/api/recordings/list']
+    public async listRecordings(req: Request, res: Response) {
+        try {
+            const list = await this.videos.listRecordings()
+            res.status(200).send(JSON.stringify(list)).end()
+        } 
+        catch (error) {
+            this.ls.error(error!)
+            res.status(500).end()    
+        }
+    }
+
+    public _streamRecording = ['GET', '/api/recordings/stream/:video']
+    public async streamRecording(req: Request, res: Response) {
+        try {
+
+            const fileName = path.normalize(req.params.video as string)
+            if (!fileName.endsWith('.mp4')) return res.status(400).end()
+
+            const exists = await this.videos.recordingExists(fileName)
+            if (!exists) return res.status(404).end()
+
+            const stream = await this.videos.createStream(fileName)
+            stream.pipe(res)
+
         } 
         catch (error) {
             this.ls.error(error!)

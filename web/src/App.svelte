@@ -22,15 +22,10 @@
                 post: [
                     (x: RouteResult) => { 
                         globals.route = x.result.path.original
-                        console.log(globals.route)
                     }
                 ]
             }}
             routes={[
-                {
-                    path: '/login',
-                    component: Login
-                },
                 {
                     component: Home
                 },
