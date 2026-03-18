@@ -28,12 +28,12 @@
         height: 4.5rem;
         width: 100%;
         background-color: var(--bg-primary);
-        box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+        box-shadow: 0 0 1rem var(--fg-shadow);
         z-index: 1000;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 1rem;
+        gap: 2rem;
 
         @media screen and (max-width: 768px) {
             height: 4rem
@@ -44,8 +44,8 @@
         }
 
         :global(svg) {
-            height: 2.5rem;
-            width: 2.5rem;
+            height: 2rem;
+            width: 2rem;
             fill: var(--fg-bleak);
             &.active {
                 fill: var(--fg-accent);

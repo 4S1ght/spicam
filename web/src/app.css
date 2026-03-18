@@ -32,10 +32,32 @@
     --fg-secondary: #1D1F23;
     --fg-bleak: #61656d;
     --fg-thin: #a0a6af;
+    
     --fg-border: #aeb3bd;
-
+    --fg-shadow: #c2c5ca;
     --fg-accent: #FF5F67;
 
+    font-size: 14px;
+
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary   : #121212;
+    --bg-secondary : #1e1e1e;
+    --bg-select    : #333333;
+
+    --fg-primary   : #f5f5f5;
+    --fg-secondary : #e0e0e0;
+    --fg-bleak     : #b0b0b0;
+    --fg-thin      : #7a7a7a;
+
+    --fg-border    : #282828;
+    --fg-shadow    : #070707;
+    --fg-accent    : #FF5F67;
+
+    color-scheme: dark;
+  }
 }
 
 body {

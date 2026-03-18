@@ -137,7 +137,7 @@ export default class CameraService {
                 frameSize += eoi === -1 ? data.byteLength : eoi
 
                 if (eoi) {
-                    this.fb = new FrameBuffer(frameSize * 5)
+                    this.fb = new FrameBuffer(frameSize * 10)
                     this.ls.info(`Frame buffer calibrated to size ${(this.fb.size/1000).toFixed(1)} kB for frame size of ${fw}x${fh}p. Restarting motion detection...`)
                     this.shouldProcessMotion = false
                     this.startMotionDetect()

@@ -1,6 +1,6 @@
 <script lang="ts">
 
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import Content from "../common/Content.svelte"
     import Icon from "../common/Icon.svelte"
     import { size } from "../lhelpers"
@@ -18,6 +18,13 @@
 
     let activeVideo = $state('')
     let videoList: VideoBucket[] = $state([])
+    let intersectTrigger: HTMLDivElement
+    let videoPlayer: HTMLDivElement
+
+    const observer = new IntersectionObserver(
+        ([e]) => videoPlayer.setAttribute('data-stuck', e.intersectionRatio < 1 ? 'true' : 'false'),
+        { threshold: [1] }
+    )
 
     const fetchVideos = async () => {
 
@@ -41,52 +48,60 @@
         const buckets: VideoBucket[] = Array.from(map.entries()).map(
             ([key, vids]) => ({
                 date: new Date(key),
-                list: vids.sort((a, b) => a.date.getTime() - b.date.getTime()),
+                list: vids.sort((a, b) => b.date.getTime() - a.date.getTime())
             })
         )
 
         videoList = []
         setTimeout(() => {
-            videoList = buckets.sort((a, b) => a.date.getTime() - b.date.getTime())
+            videoList = buckets.sort((a, b) => b.date.getTime() - a.date.getTime())
         }, 0)
     }
 
     const selectVideo = (video: Video) => {
         activeVideo = ''
-        window.scrollTo({ top: 0, behavior: 'smooth' })
         setTimeout(() => {
             activeVideo = video.name
         }, 100)
     }
 
-    onMount(fetchVideos)
+    onMount(() => {
+        fetchVideos()
+        observer.observe(intersectTrigger)
+    })
+
+    onDestroy(() => {
+        observer.disconnect()
+    })
 
 
 </script>
 
 <div class="home">
-    <Content width="1200px" class="menu"> 
 
-        <div class="video">
-            {#if activeVideo}
-                <video src="/api/recordings/stream/{activeVideo}" controls={true} autoplay={true}></video>
-            {:else}
-                <Icon i="play-video-2"/>
-            {/if}
+        <div bind:this={intersectTrigger}></div>
+        <div class="video" bind:this={videoPlayer}>
+            <div class="content">
+                {#if activeVideo}
+                    <video src="/api/recordings/stream/{activeVideo}" controls={true} autoplay={true}></video>
+                {:else}
+                    <Icon i="play-video-2"/>
+                {/if}
+            </div>
+            <div class="controls">
+                <button onclick={fetchVideos}>
+                    <Icon i="refresh"/>
+                </button>
+                {#if activeVideo} 
+                    <a href="/api/recordings/stream/{activeVideo}" download>
+                        <button>
+                            <Icon i="download"/>
+                        </button>
+                    </a>
+                {/if}
+            </div>
         </div>
 
-        <div class="controls">
-            <button on:click={fetchVideos}>
-                <Icon i="refresh"/>
-            </button>
-            {#if activeVideo} 
-                <a href="/api/recordings/stream/{activeVideo}" download>
-                    <button>
-                        <Icon i="download"/>
-                    </button>
-                </a>
-            {/if}
-        </div>
 
         <div class="list">
             <div class="row-desc">
@@ -104,7 +119,7 @@
                     </div>
 
                     {#each bucket.list as video}
-                        <div class="row" on:click={() => selectVideo(video)} data-selected="{video.name === activeVideo}">
+                        <div class="row" onclick={() => selectVideo(video)} data-selected="{video.name === activeVideo}">
                             <div class="date">{video.date.toLocaleString()}</div>
                             <div class="size">{size(video.size)}</div>
                         </div>
@@ -112,64 +127,97 @@
 
                 {/each}
 
-
             </div>
         </div>
 
-    </Content>
 </div>
 
-<style lang="css">
+<style lang="scss">
 
     .home {
-
         margin-top: 1.5rem;
+        margin-bottom: 7rem;
 
         .video {
             width: clamp(200px, 85vw, 1000px);
-            height: clamp(200px, 50vw, 600px);
+            height: calc(clamp(200px, 50vw, 600px) + 3rem);
             background-color: var(--bg-secondary);
-            border-radius: 1.5rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             margin: 0 auto;
+            position: sticky;
+            top: 0;
+            border-radius: 1rem;
+            transition: 0.15s;
             overflow: hidden;
 
-            video {
+            .content {
                 width: clamp(200px, 85vw, 1000px);
                 height: clamp(200px, 50vw, 600px);
-            }
-        }
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 0 auto;
 
-        .video :global(svg) {
-            width: clamp(2rem, 10vw, 4rem);
-            fill: var(--fg-bleak);
-        }
+                video {
+                    width: clamp(200px, 85vw, 1000px);
+                    height: clamp(200px, 50vw, 600px);
+                    transition: 0.15s;
+                }
 
-        .controls {
-            width: clamp(200px, 85vw, 1000px);
-            height: 3rem;
-            margin: 1rem auto;
-            display: flex;
-            align-items: center;
+                :global(svg) {
+                    width: clamp(2rem, 10vw, 4rem);
+                    fill: var(--fg-bleak);
+                }
 
-            button {
-                background-color: transparent;
-                border: none;
             }
 
-            :global(svg) {
-                width: 1.75rem;
-                fill: var(--fg-bleak);
-                padding: 0.25rem;
-                cursor: pointer;
-                border-radius: 0.5rem;
-                background-color: var(--bg-secondary);
-                &:hover {
-                    background-color: var(--bg-select);
+            &:global([data-stuck="true"]) {
+                width: 100vw;
+                border-radius: 0;
+                background-color: var(--bg-primary);
+                box-shadow: 0 0 .5rem var(--fg-shadow);
+
+                .content {
+                    width: 100%;
+                }
+
+                video {
+                    border-bottom-left-radius: 0.5rem;
+                    border-bottom-right-radius: 0.5rem;
                 }
             }
+
+            .controls {
+                width: clamp(200px, 85vw, 1000px);
+                height: 3rem;
+                margin: 0 auto;
+                display: flex;
+                align-items: center;
+                
+                button {
+                    height: 2rem;
+                    width: 2rem;
+                    margin: 0 0 0 0.5rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: none;
+                    border-radius: 0.4rem;
+                    background-color: transparent;
+                    cursor: pointer;
+                    &:hover {
+                        background-color: var(--bg-select);
+                    }
+                }
+
+                :global(svg) {
+                    width: 1.5rem;
+                    margin: auto auto;
+                    fill: var(--fg-primary);
+                }
+
+            }
+
+
         }
 
         .list {
@@ -216,47 +264,6 @@
                 background-color: var(--bg-select);
             }
         }
-
-
-/* 
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin: 1rem auto;
-
-            @media screen and (max-width: 768px) {
-                font-size: 0.8rem;
-            }
-
-            thead tr th {
-                text-align: left;
-                padding-bottom: 0.75em;
-                color: var(--fg-bleak); 
-            }
-
-            tbody tr:nth-child(even) td {
-                background-color: var(--bg-secondary);
-                margin: 0.5rem 0;
-            }
-
-            tbody tr td:first-child {
-                border-top-left-radius: 0.5em;
-                border-bottom-left-radius: 0.5em;
-            }
-
-            tbody tr td:last-child {
-                border-top-right-radius: 0.5em;
-                border-bottom-right-radius: 0.5em;
-            }
-
-            tbody tr {
-                cursor: pointer;
-                &:hover td {
-                    background-color: var(--bg-select);
-                }
-            }
-                        
-        } */
 
     }
 

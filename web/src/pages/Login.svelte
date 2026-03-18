@@ -115,6 +115,7 @@
             margin-bottom: 0.5rem;
             display: block;
             width: calc(100% - 2rem - 2px);
+            background: transparent;
         }
 
         button {
