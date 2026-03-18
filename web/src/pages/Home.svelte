@@ -11,21 +11,44 @@
         date: Date
     }
 
+    interface VideoBucket {
+        date: Date
+        list: Video[]
+    }
+
     let activeVideo = $state('')
-    let videos = $state([] as Video[])
+    let videoList: VideoBucket[] = $state([])
 
     const fetchVideos = async () => {
+
         const response = await fetch('/api/recordings/list')
         const data = await response.json() as any[]
-        videos = []
-        setTimeout(() => {
-            videos = data.map((v: any) => ({
-                name: v.name,
-                size: v.size,
-                date: new Date(v.date)
-            }))
-        }, 100)
+
+        const videos = data.map((v: any) => ({
+            name: v.name,
+            size: v.size,
+            date: new Date(v.date)
+        }))
+
+        const map = new Map<string, Video[]>()
+
+        for (const v of videos) {
+            const key = v.date.toISOString().split('T')[0]
+            if (!map.has(key)) map.set(key, [])
+            map.get(key)!.push(v)
+        }
         
+        const buckets: VideoBucket[] = Array.from(map.entries()).map(
+            ([key, vids]) => ({
+                date: new Date(key),
+                list: vids.sort((a, b) => a.date.getTime() - b.date.getTime()),
+            })
+        )
+
+        videoList = []
+        setTimeout(() => {
+            videoList = buckets.sort((a, b) => a.date.getTime() - b.date.getTime())
+        }, 0)
     }
 
     const selectVideo = (video: Video) => {
@@ -56,31 +79,47 @@
             <button on:click={fetchVideos}>
                 <Icon i="refresh"/>
             </button>
+            {#if activeVideo} 
+                <a href="/api/recordings/stream/{activeVideo}" download>
+                    <button>
+                        <Icon i="download"/>
+                    </button>
+                </a>
+            {/if}
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>File name</th>
-                    <th>Size</th>
-                    <th>Recorded on</th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each videos as video}
-                    <tr on:click={() => selectVideo(video)}>
-                        <td>{video.name}</td>
-                        <td>{size(video.size)}</td>
-                        <td>{video.date.toLocaleString()}</td>
-                    </tr>
+        <div class="list">
+            <div class="row-desc">
+                <div class="date">Recorded on</div>
+                <div class="size">Size</div>
+            </div>
+
+            <div class="content-table">
+
+                {#each videoList as bucket}
+
+                    <div class="table-section">
+                        <p>{bucket.date.toLocaleDateString('en-GB').replace(/\//g, '-')}</p>
+                        <div class="line"></div>
+                    </div>
+
+                    {#each bucket.list as video}
+                        <div class="row" on:click={() => selectVideo(video)} data-selected="{video.name === activeVideo}">
+                            <div class="date">{video.date.toLocaleString()}</div>
+                            <div class="size">{size(video.size)}</div>
+                        </div>
+                    {/each}
+
                 {/each}
-            </tbody>
-        </table>
+
+
+            </div>
+        </div>
 
     </Content>
 </div>
 
-<style>
+<style lang="css">
 
     .home {
 
@@ -109,7 +148,7 @@
         }
 
         .controls {
-            width: clamp(200px, 85, 1000px);
+            width: clamp(200px, 85vw, 1000px);
             height: 3rem;
             margin: 1rem auto;
             display: flex;
@@ -133,6 +172,53 @@
             }
         }
 
+        .list {
+            width: clamp(200px, 85vw, 1000px);
+            margin: 1rem auto;
+
+            .table-section {
+                display: grid;
+                grid-template-columns: max-content 1fr;
+                align-items: center;
+                gap: 1rem;
+
+                .line {
+                    height: 1px;
+                    background-color: var(--fg-thin);
+                }
+            }
+
+            .row-desc {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.25rem 0;
+                border-radius: 0.5rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .row {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.5rem;
+                cursor: pointer;
+
+                &:nth-child(even) {
+                    background-color: var(--bg-secondary)
+                }
+                &:hover {
+                    background-color: var(--bg-select);
+                }
+            }
+
+
+            .row[data-selected="true"] {
+                background-color: var(--bg-select);
+            }
+        }
+
+
+/* 
         table {
             border-collapse: collapse;
             width: 100%;
@@ -170,7 +256,7 @@
                 }
             }
                         
-        }
+        } */
 
     }
 
