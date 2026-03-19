@@ -25,6 +25,14 @@
         ([e]) => videoPlayer.setAttribute('data-stuck', e.intersectionRatio < 1 ? 'true' : 'false'),
         { threshold: [1] }
     )
+    
+    function getTimeOfDay(date: Date) {
+        const d = new Date(date)
+        const hh = String(d.getHours()).padStart(2, '0')
+        const mm = String(d.getMinutes()).padStart(2, '0')
+        const ss = String(d.getSeconds()).padStart(2, '0')
+        return `${hh}:${mm}:${ss}`
+    }
 
     const fetchVideos = async () => {
 
@@ -102,7 +110,6 @@
             </div>
         </div>
 
-
         <div class="list">
             <div class="row-desc">
                 <div class="date">Recorded on</div>
@@ -120,7 +127,7 @@
 
                     {#each bucket.list as video}
                         <div class="row" onclick={() => selectVideo(video)} data-selected="{video.name === activeVideo}">
-                            <div class="date">{video.date.toLocaleString()}</div>
+                            <div class="date">{getTimeOfDay(video.date)}</div>
                             <div class="size">{size(video.size)}</div>
                         </div>
                     {/each}
@@ -141,7 +148,7 @@
         .video {
             width: clamp(200px, 85vw, 1000px);
             height: calc(clamp(200px, 50vw, 600px) + 3rem);
-            background-color: var(--bg-secondary);
+            background-color: black;
             margin: 0 auto;
             position: sticky;
             top: 0;
@@ -173,7 +180,7 @@
             &:global([data-stuck="true"]) {
                 width: 100vw;
                 border-radius: 0;
-                background-color: var(--bg-primary);
+                // background-color: var(--bg-primary);
                 box-shadow: 0 0 .5rem var(--fg-shadow);
 
                 .content {
@@ -222,26 +229,35 @@
 
         .list {
             width: clamp(200px, 85vw, 1000px);
-            margin: 1rem auto;
+            margin: 3rem auto;
 
             .table-section {
                 display: grid;
                 grid-template-columns: max-content 1fr;
                 align-items: center;
                 gap: 1rem;
+                margin: 0 0.5rem;
+
+                p {
+                    color: var(--fg-secondary);
+                }
 
                 .line {
                     height: 1px;
-                    background-color: var(--fg-thin);
+                    background-color: var(--fg-border);
                 }
             }
 
             .row-desc {
                 display: flex;
                 justify-content: space-between;
-                padding: 0.25rem 0;
+                padding: 0.25rem 0.5rem;
                 border-radius: 0.5rem;
                 margin-bottom: 0.75rem;
+
+                * {
+                    color: var(--fg-secondary);
+                }
             }
 
             .row {
@@ -256,6 +272,10 @@
                 }
                 &:hover {
                     background-color: var(--bg-select);
+                }
+
+                .size {
+                    color: var(--fg-secondary);
                 }
             }
 
