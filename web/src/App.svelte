@@ -1,6 +1,6 @@
 <script lang="ts">
 
-    import { goto, Router, type RouteResult } from "@mateothegreat/svelte5-router"
+    import { Router, type RouteResult } from "@mateothegreat/svelte5-router"
 
     import globals from './globals.svelte'
 

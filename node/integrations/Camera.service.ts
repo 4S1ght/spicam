@@ -23,6 +23,8 @@ type JPEG = Awaited<ReturnType<typeof Jimp.read>>
 export default class CameraService {
 
     private stopped = false
+    public recording = false
+    public previewing = false
 
     public static name = 'camera'
     public static deps = ['logging', 'db', 'light_control']
@@ -269,6 +271,7 @@ export default class CameraService {
 
     private async recordClip() {
 
+        this.recording = true
         await this.stopMotionDetect()
 
         const width      = await this.db.getSetting('recording_frame_width')      as string
@@ -312,6 +315,7 @@ export default class CameraService {
 
         child.on('error', (error: Error) => this.ls.error(error))
         child.on('close', (code) => {
+            this.recording = false
             this.ls.info(`Recording "${filename}" finished.`)
             this.ls.info(`Recording process exited with code ${code}.`)
             if (!this.stopped) this.startMotionDetect()
@@ -341,9 +345,11 @@ export default class CameraService {
 
     // Live video preview ----------------------------------------------------------------------------------------------
 
-    private livePreviewProcess: cp.ChildProcess | null = null
+    public livePreviewProcess: cp.ChildProcess | null = null
 
     public async createLivePreview() {
+
+        this.previewing = true
 
         const md = this.motionDetectProcess!
         const rec = this.recordingProcess!
@@ -375,13 +381,12 @@ export default class CameraService {
             + (nv ? ` Night vision active. Contrast: ${contrast}, gain: ${gain}.` : '')
         )
 
-        const child = this.livePreviewProcess = cp.spawn('rpicam-vid', [
-            '-t',           '0',
-            '--codec',      'h264', 
-            '--width',      width, 
+        const child = this.livePreviewProcess = cp.spawn('rpicam-jpeg', [
+            '-t',           '0',  
+            '--width',      width,
             '--height',     height,
             '--framerate',  framerate,
-            '--bitrate',    bitrate,
+            '--quality',    '80',         
             '-o',           '-',
             ...(!nv ? [] : [
                 '--saturation', '0',
@@ -398,12 +403,47 @@ export default class CameraService {
 
         child.on('error', (error: Error) => this.ls.error(error))
         child.on('close', (code) => {
+            this.previewing = false
             this.ls.info(`Live preview process exited with code ${code}.`)
             if (!this.stopped) this.startMotionDetect()
         })
 
         return child
 
+    }
+
+    public async stopLivePreview() {
+
+        this.ls.info('Stopping live preview...')
+
+        const cp = this.livePreviewProcess
+        const isDead = cp && (cp.exitCode || cp.killed)
+
+        if (isDead) {
+            this.ls.info('Live preview already stopped.')
+            return
+        }
+
+        const result = await new Promise<Error | undefined>((resolve) => {
+            if (cp && cp.exitCode === null && cp.killed == false) {
+                cp.on('close', resolve)
+                cp.on('error', resolve)
+                cp.kill('SIGTERM')
+            }
+            else resolve(undefined)
+        })
+
+        this.ls.info('Live preview stopped.')
+        return result
+        
+    }
+
+    private async handlePreviewStream() {
+
+    }
+
+    public subscribeToLivePreviewStream() {
+        
     }
 
     // Lifecycle upkeep ------------------------------------------------------------------------------------------------

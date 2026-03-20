@@ -20,6 +20,7 @@ import fsu                         from '../utils/Fs.ts'
 import requestLogging              from './middleware/RequestLogging.ts'
 import session                     from './middleware/Session.ts'
 import type VideoManagementService from '../integrations/VideoManagement.service.ts'
+import type CameraService from '../integrations/Camera.service.ts'
 
 const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
@@ -28,24 +29,26 @@ const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 export default class HTTPService {
 
     public static name = 'http'
-    public static deps = ['logging', 'db', 'config', 'vm']
+    public static deps = ['logging', 'db', 'config', 'vm', 'camera']
 
     private ls: LoggingScope
     private db: DatabaseService
     private config: ConfigService['settings']
     private videos: VideoManagementService
+    private camera: CameraService
 
     private declare app: express.Express
     private declare http: http.Server
     private declare https: https.Server
     private declare server: http.Server | https.Server
 
-    constructor(deps: { logging: LoggingService, db: DatabaseService, config: ConfigService, vm: VideoManagementService }) {
+    constructor(deps: { logging: LoggingService, db: DatabaseService, config: ConfigService, vm: VideoManagementService, camera: CameraService }) {
         
         this.ls = deps.logging.getScope(import.meta.url)
         this.db = deps.db
         this.config = deps.config.settings
         this.videos = deps.vm
+        this.camera = deps.camera
         this.app = express()
 
         this.app.use(requestLogging(deps.logging))
@@ -277,6 +280,56 @@ export default class HTTPService {
         catch (error) {
             this.ls.error(error!)
             res.status(500).end()    
+        }
+    }
+
+    public _startLivePreview = ['POST', '/api/live-preview/start']
+    public async startLivePreview(req: Request, res: Response) {
+        try {
+
+            if (this.camera.recording) return res.status(409).json(JSON.stringify({ error: "recording" })).end()
+            if (this.camera.previewing) return res.status(409).json(JSON.stringify({ error: "already_previewing" })).end()
+
+            await this.camera.createLivePreview()
+            res.status(200).end()
+
+        } 
+        catch (error) {
+            this.ls.error(error!)
+            res.status(500).end()    
+        }
+    }
+
+    public _stopLivePreview = ['POST', '/api/live-preview/stop']
+    public async stopLivePreview(req: Request, res: Response) {
+        try {
+
+            if (!this.camera.previewing) return res.status(409).json(JSON.stringify({ error: "not_previewing" })).end()
+
+            await this.camera.stopLivePreview()
+            res.status(200).end()
+
+        } 
+        catch (error) {
+            this.ls.error(error!)
+            res.status(500).end()    
+        }
+    }
+
+    public _streamLivePreview = ['GET', '/api/live-preview/stream']
+    public async streamLivePreview(req: Request, res: Response) {
+        try {
+
+            if (!this.camera.previewing) return res.status(400).json(JSON.stringify({ error: "not_previewing" })).end()
+            
+            
+
+                
+            
+        } 
+        catch (error) {
+            this.ls.error(error!)
+            res.status(500).end()
         }
     }
 
