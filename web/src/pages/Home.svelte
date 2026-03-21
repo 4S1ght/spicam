@@ -1,9 +1,11 @@
 <script lang="ts">
 
     import { onDestroy, onMount } from "svelte";
-    import Content from "../common/Content.svelte"
     import Icon from "../common/Icon.svelte"
-    import { size } from "../lhelpers"
+    import { size } from "../helpers"
+
+    import globals from '../globals.svelte'
+    const dict = globals.dict
 
     interface Video {
         name: string
@@ -112,8 +114,8 @@
 
         <div class="list">
             <div class="row-desc">
-                <div class="date">Recorded on</div>
-                <div class="size">Size</div>
+                <div class="date">{dict['home.recorded_on']}</div>
+                <div class="size">{dict['home.size']}</div>
             </div>
 
             <div class="content-table">

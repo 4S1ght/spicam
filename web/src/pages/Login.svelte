@@ -4,6 +4,8 @@
     import globals from '../globals.svelte'
     import { goto } from '@mateothegreat/svelte5-router';
 
+    let dict = globals.dict
+
     let status = $state('')
     let statusCount = $state(0)
     let hidden = $state(false)
@@ -44,9 +46,6 @@
         }
 
         hidden = true
-        setTimeout(() => {
-            goto('/home')
-        }, 100);
 
     }
 
@@ -59,12 +58,12 @@
 <div class="login">
     <form onsubmit={login}>
         <h1>Spicam</h1>
-        <p class="subtitle">Login to the spicam dashboard.</p>
-        <label for="username">Username</label>
+        <p class="subtitle">{dict['login.subtitle']}</p>
+        <label for="username">{dict['login.username']}</label>
         <input type="text" name="username" />
-        <label for="password">Password</label>
+        <label for="password">{dict['login.password']}</label>
         <input type="password" name="password" />
-        <button type="submit">Login</button>
+        <button type="submit">{dict['login.submit']}</button>
         {#if status} 
             <p class="status">{status} {statusCount > 0 ? `(${statusCount})` : ''}</p>
         {/if}
@@ -106,6 +105,7 @@
             color: var(--fg-bleak);
             transform: translateY(52%);
             width: min-content;
+            text-wrap: nowrap;
         }
 
         input {

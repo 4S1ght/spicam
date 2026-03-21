@@ -21,6 +21,7 @@ import requestLogging              from './middleware/RequestLogging.ts'
 import session                     from './middleware/Session.ts'
 import type VideoManagementService from '../integrations/VideoManagement.service.ts'
 import type CameraService from '../integrations/Camera.service.ts'
+import { string } from 'zod'
 
 const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
@@ -283,16 +284,71 @@ export default class HTTPService {
         }
     }
 
-    public _startLivePreview = ['POST', '/api/live-preview/start']
-    public async startLivePreview(req: Request, res: Response) {
+    // public _startLivePreview = ['POST', '/api/live-preview/start']
+    // public async startLivePreview(req: Request, res: Response) {
+    //     try {
+
+    //         if (this.camera.recording) return res.status(409).json(JSON.stringify({ error: "recording" })).end()
+    //         if (this.camera.previewing) return res.status(409).json(JSON.stringify({ error: "already_previewing" })).end()
+
+    //         await this.camera.createLivePreview()
+    //         res.status(200).end()
+
+    //     } 
+    //     catch (error) {
+    //         this.ls.error(error!)
+    //         res.status(500).end()    
+    //     }
+    // }
+
+    // public _stopLivePreview = ['POST', '/api/live-preview/stop']
+    // public async stopLivePreview(req: Request, res: Response) {
+    //     try {
+
+    //         if (!this.camera.previewing) return res.status(409).json(JSON.stringify({ error: "not_previewing" })).end()
+
+    //         await this.camera.stopLivePreview()
+    //         res.status(200).end()
+
+    //     } 
+    //     catch (error) {
+    //         this.ls.error(error!)
+    //         res.status(500).end()    
+    //     }
+    // }
+
+    // public _streamLivePreview = ['GET', '/api/live-preview/stream']
+    // public async streamLivePreview(req: Request, res: Response) {
+    //     try {
+
+    //         if (!this.camera.previewing) return res.status(400).json(JSON.stringify({ error: "not_previewing" })).end()
+            
+    //     } 
+    //     catch (error) {
+    //         this.ls.error(error!)
+    //         res.status(500).end()
+    //     }
+    // }
+
+    public _updateSetting = ['POST', '/api/settings/update']
+    public async updateSetting(req: Request, res: Response) {
         try {
 
-            if (this.camera.recording) return res.status(409).json(JSON.stringify({ error: "recording" })).end()
-            if (this.camera.previewing) return res.status(409).json(JSON.stringify({ error: "already_previewing" })).end()
+            const { key, value } = req.body
+            if (key === 'seeded') return res.status(401).end()
+            
+            // Only allow changing existing settings
+            const setting = await this.db.client.settings.findFirst({ where: { key } })
+            if (!setting) return res.status(401).end()
 
-            await this.camera.createLivePreview()
+            const isString = typeof value === 'string' && string.length <= 128 && string.length >= 1
+            const isNumber = typeof value === 'number' && Number.isSafeInteger(value)
+            const isBool   = typeof value === 'boolean'
+
+            if (!isString && !isNumber && !isBool) return res.status(401).end()
+            await this.db.client.settings.update({ where: { key }, data: { value: value.toString() } })
+
             res.status(200).end()
-
         } 
         catch (error) {
             this.ls.error(error!)
@@ -300,36 +356,18 @@ export default class HTTPService {
         }
     }
 
-    public _stopLivePreview = ['POST', '/api/live-preview/stop']
-    public async stopLivePreview(req: Request, res: Response) {
+    public _getSettings = ['GET', '/api/settings/list']
+    public async getSettings(req: Request, res: Response) {
         try {
-
-            if (!this.camera.previewing) return res.status(409).json(JSON.stringify({ error: "not_previewing" })).end()
-
-            await this.camera.stopLivePreview()
-            res.status(200).end()
-
+            const settings = (await this.db.client.settings.findMany())
+                .filter(setting => setting.key !== 'seeded')
+                .reduce((acc, setting) => ({ ...acc, [setting.key]: setting.value }), {})
+            
+            res.status(200).send(JSON.stringify(settings)).end()
         } 
         catch (error) {
             this.ls.error(error!)
             res.status(500).end()    
-        }
-    }
-
-    public _streamLivePreview = ['GET', '/api/live-preview/stream']
-    public async streamLivePreview(req: Request, res: Response) {
-        try {
-
-            if (!this.camera.previewing) return res.status(400).json(JSON.stringify({ error: "not_previewing" })).end()
-            
-            
-
-                
-            
-        } 
-        catch (error) {
-            this.ls.error(error!)
-            res.status(500).end()
         }
     }
 

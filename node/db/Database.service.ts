@@ -94,10 +94,10 @@ export default class DatabaseService {
                     { key: 'recording_bitrate',          value: '1000000', default: '1000000' },
 
                     // Live preview settings
-                    { key: 'live_preview_frame_width',   value: '1920',     default: '1920'   },
-                    { key: 'live_preview_frame_height',  value: '1080',     default: '1080'   },
-                    { key: 'live_preview_frame_rate',    value: '15',      default: '15'      },
-                    { key: 'live_preview_bitrate',       value: '1000000', default: '1000000' },
+                    { key: 'live_preview_frame_width',   value: '1920',     default: '1920'    },
+                    { key: 'live_preview_frame_height',  value: '1080',     default: '1080'    },
+                    { key: 'live_preview_frame_rate',    value: '15',       default: '15'      },
+                    { key: 'live_preview_bitrate',       value: '1000000',  default: '1000000' },
 
                     // Light controls settings
                     { key: 'led_controls_stdin_polling', value: '1',        default: '1'    },
